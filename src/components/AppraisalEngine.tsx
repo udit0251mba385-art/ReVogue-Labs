@@ -6,12 +6,10 @@ import {
   ShieldCheck, 
   Scan, 
   Activity, 
-  IndianRupee, 
   CheckCircle2, 
-  Cpu, 
   RefreshCw,
   Flame,
-  Shirt
+  ArrowRight
 } from 'lucide-react';
 
 interface AppraisalEngineProps {
@@ -191,7 +189,9 @@ export const AppraisalEngine: React.FC<AppraisalEngineProps> = ({ onLiquidatePre
                   Certified AI Inspection Certificate
                 </h3>
               </div>
-              <span className="text-xs font-mono text-[#8C8675]">Batch #RV-QC-{Math.floor(100 + Math.random() * 900)}</span>
+              <span className="text-xs font-mono text-[#8C8675]">
+                Batch #RV-QC-{selectedPresetId.replace('preset-', '40')}
+              </span>
             </div>
 
             {/* Garment Title and Brand Row */}
@@ -253,14 +253,21 @@ export const AppraisalEngine: React.FC<AppraisalEngineProps> = ({ onLiquidatePre
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col sm:items-end gap-2">
                   <div className="text-xs font-mono text-[#C2F04E] flex items-center gap-1.5">
                     <CheckCircle2 className="w-4 h-4 text-[#C2F04E]" />
                     <span>Instant UPI Handover Payout</span>
                   </div>
-                  <div className="text-[11px] text-[#ECE8DC]">
-                    No waiting for buyers to purchase
-                  </div>
+                  {onLiquidatePreset && (
+                    <button
+                      type="button"
+                      onClick={() => onLiquidatePreset(currentResult.brand, currentResult.payoutCash)}
+                      className="px-4 py-2 bg-[#C2F04E] hover:bg-[#d2f772] text-[#142B15] text-xs font-mono font-bold rounded transition-colors flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <span>Liquidate This Piece</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

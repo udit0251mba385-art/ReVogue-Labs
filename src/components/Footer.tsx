@@ -50,6 +50,14 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateTab }) => {
                 AI Garment Inspection Engine
               </button>
             </li>
+            <li>
+              <button
+                onClick={() => onNavigateTab('account')}
+                className="hover:text-[#1E3F20] transition-colors cursor-pointer"
+              >
+                Student Account &amp; Orders
+              </button>
+            </li>
           </ul>
         </div>
 

@@ -18,12 +18,14 @@ interface BuyerFlowProps {
   products: ThriftProduct[];
   cartItemIds: string[];
   onAddToCart: (product: ThriftProduct) => void;
+  previewMode?: boolean;
 }
 
 export const BuyerFlow: React.FC<BuyerFlowProps> = ({
   products,
   cartItemIds,
   onAddToCart,
+  previewMode = false,
 }) => {
   // Flash drop countdown timer (e.g., 18 hours, 34 mins, 42 seconds remaining)
   const [timeLeft, setTimeLeft] = useState<{ hours: number; minutes: number; seconds: number }>({
@@ -88,8 +90,10 @@ export const BuyerFlow: React.FC<BuyerFlowProps> = ({
   });
 
   return (
-    <div className="py-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      {/* 48-Hour Drop Banner Header */}
+    <div className={previewMode ? '' : 'py-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'}>
+      {!previewMode && (
+        <>
+          {/* 48-Hour Drop Banner Header */}
       <div className="mb-8 p-6 sm:p-8 bg-[#1E3F20] text-[#F7F5EE] rounded-lg shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="space-y-2">
           <div className="text-xs font-mono uppercase tracking-widest text-[#C2F04E] flex items-center gap-2">
@@ -163,7 +167,7 @@ export const BuyerFlow: React.FC<BuyerFlowProps> = ({
               <ArrowUpDown className="w-3.5 h-3.5 text-[#8C8675]" />
               <select
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as any)}
+                onChange={(e) => setSortBy(e.target.value as 'featured' | 'price_asc' | 'price_desc')}
                 className="bg-transparent text-[#142B15] focus:outline-hidden text-xs cursor-pointer"
               >
                 <option value="featured">Featured Drops</option>
@@ -271,6 +275,8 @@ export const BuyerFlow: React.FC<BuyerFlowProps> = ({
           </div>
         </div>
       </div>
+        </>
+      )}
 
       {/* Thrift Product Grid */}
       {filteredProducts.length === 0 ? (

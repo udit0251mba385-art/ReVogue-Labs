@@ -5,15 +5,12 @@ import {
   Building2, 
   Package, 
   Wallet, 
-  Calendar, 
   ArrowRight, 
   ArrowLeft, 
   CheckCircle2, 
   Sparkles, 
   Zap, 
   Coins, 
-  ShieldCheck,
-  QrCode,
   LogIn
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -58,7 +55,6 @@ export const SellerFlow: React.FC<SellerFlowProps> = ({
 
   // Step 2: Bag Size & Valuation Calculator
   const [bagTier, setBagTier] = useState<'small' | 'medium' | 'bulk'>('medium');
-  const [itemCount, setItemCount] = useState<number>(8);
   const [denimCount, setDenimCount] = useState<number>(2);
   const [outerwearCount, setOuterwearCount] = useState<number>(2);
   const [topsCount, setTopsCount] = useState<number>(4);
@@ -91,17 +87,14 @@ export const SellerFlow: React.FC<SellerFlowProps> = ({
   const handleSelectTier = (tier: 'small' | 'medium' | 'bulk') => {
     setBagTier(tier);
     if (tier === 'small') {
-      setItemCount(4);
       setOuterwearCount(1);
       setDenimCount(1);
       setTopsCount(2);
     } else if (tier === 'medium') {
-      setItemCount(8);
       setOuterwearCount(2);
       setDenimCount(2);
       setTopsCount(4);
     } else {
-      setItemCount(14);
       setOuterwearCount(4);
       setDenimCount(4);
       setTopsCount(6);

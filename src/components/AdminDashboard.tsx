@@ -1,65 +1,80 @@
 import React, { useState } from 'react';
 import { UnitEconomics, RoutePlan, RouteStop, ThriftProduct } from '../types';
 import { 
-  TrendingUp, 
-  DollarSign, 
-  Truck, 
-  Zap, 
   MapPin, 
   CheckCircle2, 
   Clock, 
-  ArrowUpRight, 
-  ShieldCheck, 
-  Users, 
-  Package,
-  Layers,
-  Sparkles
+  ShieldCheck
 } from 'lucide-react';
+
+export interface StagingItem {
+  id: string;
+  title: string;
+  brand: ThriftProduct['brand'];
+  category: ThriftProduct['category'];
+  origin: string;
+  donorPayout: number;
+  suggestedDropPrice: number;
+  originalPrice: number;
+  seamScore: number;
+  styleType: ThriftProduct['styleType'];
+  status: 'pending' | 'approved';
+}
 
 interface AdminDashboardProps {
   metrics: UnitEconomics;
   routePlans: RoutePlan[];
-  onApproveDropItem?: (item: any) => void;
+  onApproveDropItem?: (item: StagingItem) => void;
 }
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   metrics,
   routePlans: initialRoutePlans,
+  onApproveDropItem,
 }) => {
   const [routePlans, setRoutePlans] = useState<RoutePlan[]>(initialRoutePlans);
   const [selectedRouteId, setSelectedRouteId] = useState<string>(initialRoutePlans[0].id);
 
   // Staging queue items waiting for final quality approval before flash drop
-  const [stagingQueue, setStagingQueue] = useState([
+  const [stagingQueue, setStagingQueue] = useState<StagingItem[]>([
     {
       id: 'stg-01',
       title: 'Uniqlo Oxford Relaxed Button-Down',
       brand: 'Uniqlo',
+      category: 'Tops & Knitwear',
       origin: 'Ashoka RH-3',
       donorPayout: 380,
       suggestedDropPrice: 620,
+      originalPrice: 2490,
       seamScore: 98,
-      status: 'pending' as 'pending' | 'approved',
+      styleType: 'oversized_jacket',
+      status: 'pending',
     },
     {
       id: 'stg-02',
       title: 'Zara Faux Leather Cropped Biker',
       brand: 'Zara',
+      category: 'Outerwear',
       origin: 'Miranda House DU',
       donorPayout: 750,
       suggestedDropPrice: 1190,
+      originalPrice: 5490,
       seamScore: 94,
-      status: 'pending' as 'pending' | 'approved',
+      styleType: 'oversized_jacket',
+      status: 'pending',
     },
     {
       id: 'stg-03',
       title: 'H&M Organic Cotton Oversized Tee',
       brand: 'H&M',
+      category: 'Tops & Knitwear',
       origin: 'Bennett Block B',
       donorPayout: 210,
       suggestedDropPrice: 420,
+      originalPrice: 1499,
       seamScore: 99,
-      status: 'pending' as 'pending' | 'approved',
+      styleType: 'streetwear_hoodie',
+      status: 'pending',
     },
   ]);
 
@@ -88,9 +103,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   };
 
   const handleApproveStaging = (id: string) => {
+    const target = stagingQueue.find((item) => item.id === id);
+    if (!target || target.status === 'approved') return;
+
     setStagingQueue((prev) =>
       prev.map((item) => (item.id === id ? { ...item, status: 'approved' } : item))
     );
+    if (onApproveDropItem) {
+      onApproveDropItem(target);
+    }
   };
 
   const revenueProgress = Math.round((metrics.monthlyRevenueCurrent / metrics.monthlyRevenueTarget) * 100);

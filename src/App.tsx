@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, Suspense, lazy } from 'react';
 import { 
   INITIAL_PRODUCTS, 
   UNIT_ECONOMICS_METRICS, 
@@ -12,15 +12,25 @@ import {
 import { ThriftProduct, CartItem, PickupBooking, UnitEconomics, RoutePlan } from './types';
 import { Navbar, NavTab } from './components/Navbar';
 import { HeroSection } from './components/HeroSection';
-import { SellerFlow } from './components/SellerFlow';
 import { BuyerFlow } from './components/BuyerFlow';
-import { AppraisalEngine } from './components/AppraisalEngine';
-import { AdminDashboard } from './components/AdminDashboard';
-import { AccountView } from './components/AccountView';
 import { AuthModal } from './components/AuthModal';
 import { CartDrawer } from './components/CartDrawer';
 import { ToastContainer, ToastMessage } from './components/Toast';
 import { Footer } from './components/Footer';
+import type { StagingItem } from './components/AdminDashboard';
+
+const SellerFlow = lazy(() =>
+  import('./components/SellerFlow').then((m) => ({ default: m.SellerFlow }))
+);
+const AppraisalEngine = lazy(() =>
+  import('./components/AppraisalEngine').then((m) => ({ default: m.AppraisalEngine }))
+);
+const AdminDashboard = lazy(() =>
+  import('./components/AdminDashboard').then((m) => ({ default: m.AdminDashboard }))
+);
+const AccountView = lazy(() =>
+  import('./components/AccountView').then((m) => ({ default: m.AccountView }))
+);
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<NavTab>('home');
@@ -104,6 +114,42 @@ export default function App() {
     );
   };
 
+  // Publish approved staging garment into live 48h Flash Drop
+  const handleApproveDropItem = (item: StagingItem) => {
+    const newProduct: ThriftProduct = {
+      id: `rv-${item.id}`,
+      title: item.title,
+      brand: item.brand,
+      category: item.category,
+      originalPrice: item.originalPrice,
+      thriftPrice: item.suggestedDropPrice,
+      size: 'M',
+      condition: 'Mint',
+      campusOrigin: item.origin,
+      material: 'Quality-Verified Campus Collection',
+      aiVerificationScore: item.seamScore,
+      sanitizationBatch: 'SAN-DEL-4420',
+      steamTreatedAt: '120°C Hospital-Grade Vapor',
+      colorPalette: {
+        primary: '#2A4A30',
+        secondary: '#1A301E',
+        accent: '#C2F04E',
+      },
+      styleType: item.styleType,
+      tags: ['Steam Sanitized', 'Just Dropped'],
+      inStock: true,
+      featured: true,
+    };
+
+    setProducts((prev) =>
+      prev.some((p) => p.id === newProduct.id) ? prev : [newProduct, ...prev]
+    );
+    triggerToast(
+      'Published to 48h Flash Drop',
+      `${item.brand} ${item.title} is now live at ₹${item.suggestedDropPrice}.`
+    );
+  };
+
   const cartCount = cartItems.reduce((acc, curr) => acc + curr.quantity, 0);
   const cartItemIds = cartItems.map((c) => c.product.id);
 
@@ -155,55 +201,65 @@ export default function App() {
                 </button>
               </div>
 
-              {/* Mini Drop Grid */}
+              {/* Clean 4-item Featured Grid without duplicate banner */}
               <BuyerFlow
                 products={products.slice(0, 4)}
                 cartItemIds={cartItemIds}
                 onAddToCart={handleAddToCart}
+                previewMode={true}
               />
             </div>
           </div>
         )}
 
-        {activeTab === 'seller' && (
-          <SellerFlow
-            onBookingConfirmed={handleBookingConfirmed}
-            onOpenAppraisal={() => setActiveTab('appraisal')}
-            onOpenAuthModal={() => setIsAuthModalOpen(true)}
-          />
-        )}
+        <Suspense
+          fallback={
+            <div className="py-20 text-center text-xs font-mono text-[#5A564A]">
+              Loading module...
+            </div>
+          }
+        >
+          {activeTab === 'seller' && (
+            <SellerFlow
+              onBookingConfirmed={handleBookingConfirmed}
+              onOpenAppraisal={() => setActiveTab('appraisal')}
+              onOpenAuthModal={() => setIsAuthModalOpen(true)}
+            />
+          )}
 
-        {activeTab === 'buyer' && (
-          <BuyerFlow
-            products={products}
-            cartItemIds={cartItemIds}
-            onAddToCart={handleAddToCart}
-          />
-        )}
+          {activeTab === 'buyer' && (
+            <BuyerFlow
+              products={products}
+              cartItemIds={cartItemIds}
+              onAddToCart={handleAddToCart}
+            />
+          )}
 
-        {activeTab === 'appraisal' && (
-          <AppraisalEngine
-            onLiquidatePreset={() => {
-              setActiveTab('seller');
-            }}
-          />
-        )}
+          {activeTab === 'appraisal' && (
+            <AppraisalEngine
+              onLiquidatePreset={() => {
+                setActiveTab('seller');
+              }}
+            />
+          )}
 
-        {activeTab === 'admin' && (
-          <AdminDashboard
-            metrics={metrics}
-            routePlans={routePlans}
-          />
-        )}
+          {activeTab === 'admin' && (
+            <AdminDashboard
+              metrics={metrics}
+              routePlans={routePlans}
+              onApproveDropItem={handleApproveDropItem}
+            />
+          )}
 
-        {activeTab === 'account' && (
-          <AccountView
-            onNavigateSeller={() => setActiveTab('seller')}
-            onNavigateBuyer={() => setActiveTab('buyer')}
-            onOpenAuthModal={() => setIsAuthModalOpen(true)}
-            onToast={triggerToast}
-          />
-        )}
+          {activeTab === 'account' && (
+            <AccountView
+              onNavigateSeller={() => setActiveTab('seller')}
+              onNavigateBuyer={() => setActiveTab('buyer')}
+              onOpenAuthModal={() => setIsAuthModalOpen(true)}
+              onToast={triggerToast}
+            />
+          )}
+        </Suspense>
       </main>
 
       {/* Cart / Campus Bag Slide-Over Drawer */}

@@ -6,10 +6,8 @@ import {
   Trash2, 
   ShoppingBag, 
   ArrowRight, 
-  ShieldCheck, 
   CheckCircle2, 
   MapPin, 
-  Truck,
   LogIn
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -96,10 +94,21 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
     onClose();
   };
 
+  const handleDrawerClose = () => {
+    if (isOrdered) {
+      handleFinish();
+    } else {
+      onClose();
+    }
+  };
+
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-black/50 backdrop-blur-xs flex justify-end">
+    <div
+      className="fixed inset-0 z-50 overflow-hidden bg-black/50 backdrop-blur-xs flex justify-end"
+      onClick={handleDrawerClose}
+    >
       <div 
-        className="w-full max-w-md bg-[#FAF9F4] h-full shadow-2xl flex flex-col border-l border-[#1E3F20]/20 animate-in slide-in-from-right duration-200"
+        className="w-full max-w-md bg-[#FAF9F4] h-full shadow-2xl flex flex-col border-l border-[#1E3F20]/20"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Drawer Header */}
@@ -111,7 +120,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
             </h2>
           </div>
           <button
-            onClick={onClose}
+            onClick={handleDrawerClose}
             className="p-1.5 text-[#5A564A] hover:text-[#1E3F20] hover:bg-[#ECE8DC] rounded transition-colors cursor-pointer"
             aria-label="Close Bag"
           >
@@ -185,7 +194,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
           <>
             {/* Items List */}
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
-              {items.map(({ product, quantity }) => (
+              {items.map(({ product }) => (
                 <div
                   key={product.id}
                   className="bg-white border border-[#1E3F20]/15 rounded p-3 flex items-start gap-3 shadow-2xs"

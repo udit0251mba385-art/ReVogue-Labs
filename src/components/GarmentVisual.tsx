@@ -1,6 +1,6 @@
 import React from 'react';
 import { ThriftProduct } from '../types';
-import { Sparkles, ShieldCheck } from 'lucide-react';
+import { ShieldCheck } from 'lucide-react';
 
 interface GarmentVisualProps {
   product: ThriftProduct;

@@ -15,19 +15,19 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   onNavigateBuyer,
   onNavigateAppraisal,
 }) => {
-  // Live dynamic counter simulation ticker
-  const [liveGarments, setLiveGarments] = useState(metrics.kgCarbonDiverted);
-  const [liveWater, setLiveWater] = useState(metrics.litersWaterSaved);
-  const [liveCash, setLiveCash] = useState(metrics.totalCashDisbursed);
+  // Live dynamic counter ticker combined with real session updates
+  const [tickerOffset, setTickerOffset] = useState(0);
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setLiveGarments((prev) => prev + 1);
-      setLiveWater((prev) => prev + 240);
-      setLiveCash((prev) => prev + 35);
+      setTickerOffset((prev) => prev + 1);
     }, 4500);
     return () => clearInterval(timer);
   }, []);
+
+  const liveGarments = metrics.kgCarbonDiverted + tickerOffset;
+  const liveWater = metrics.litersWaterSaved + tickerOffset * 240;
+  const liveCash = metrics.totalCashDisbursed + tickerOffset * 35;
 
   return (
     <section className="relative overflow-hidden pt-8 pb-16 md:pt-14 md:pb-20 border-b border-[#1E3F20]/10">
