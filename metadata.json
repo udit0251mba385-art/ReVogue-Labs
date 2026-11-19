@@ -1,0 +1,6 @@
+{
+  "name": "ReVogue Labs | Campus Circular Fashion Platform",
+  "description": "Tech-enabled circular fashion platform for university students. 60s wardrobe liquidation, AI garment appraisal, instant UPI payouts, and curated campus flash drops.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

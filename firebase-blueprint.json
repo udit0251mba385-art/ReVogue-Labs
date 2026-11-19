@@ -1,0 +1,278 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Authenticated student or admin profile for ReVogue Labs.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Firebase Auth UID of the user."
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "minLength": 3,
+          "maxLength": 160,
+          "description": "Verified email address of the user."
+        },
+        "displayName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80,
+          "description": "Student display name."
+        },
+        "campusId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Selected Delhi NCR campus cluster ID."
+        },
+        "role": {
+          "type": "string",
+          "enum": ["student"],
+          "description": "User role; strictly 'student' for client self-registration."
+        },
+        "dropCredits": {
+          "type": "number",
+          "description": "Accumulated ReVogue Drop Credit tokens."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server update timestamp."
+        }
+      },
+      "required": ["uid", "email", "displayName", "campusId", "role", "dropCredits", "createdAt", "updatedAt"]
+    },
+    "PickupBooking": {
+      "title": "PickupBooking",
+      "description": "Doorstep campus bag pickup booking scheduled by a student seller.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Booking reference ID."
+        },
+        "userId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Owner Firebase Auth UID."
+        },
+        "campusId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Campus location identifier."
+        },
+        "campusName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 120,
+          "description": "Display name of the campus."
+        },
+        "hostelDorm": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 120,
+          "description": "Hostel and room details."
+        },
+        "contactName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80,
+          "description": "Student contact name."
+        },
+        "phone": {
+          "type": "string",
+          "minLength": 6,
+          "maxLength": 24,
+          "description": "WhatsApp phone number."
+        },
+        "upiId": {
+          "type": "string",
+          "maxLength": 80,
+          "description": "Optional UPI VPA handle."
+        },
+        "bagSize": {
+          "type": "string",
+          "enum": ["small", "medium", "bulk"],
+          "description": "Bag size tier."
+        },
+        "estimatedItems": {
+          "type": "number",
+          "description": "Estimated garment count."
+        },
+        "estimatedPayout": {
+          "type": "number",
+          "description": "Estimated payout in INR."
+        },
+        "payoutMethod": {
+          "type": "string",
+          "enum": ["upi", "store_credit"],
+          "description": "Selected payout type."
+        },
+        "slotDate": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 60,
+          "description": "Pickup slot date."
+        },
+        "slotTime": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 80,
+          "description": "Pickup time window."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["scheduled", "assigned", "in_transit", "appraised", "paid", "cancelled"],
+          "description": "Current lifecycle status of the pickup."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "campusId",
+        "campusName",
+        "hostelDorm",
+        "contactName",
+        "phone",
+        "bagSize",
+        "estimatedItems",
+        "estimatedPayout",
+        "payoutMethod",
+        "slotDate",
+        "slotTime",
+        "status",
+        "createdAt"
+      ]
+    },
+    "ThriftOrder": {
+      "title": "ThriftOrder",
+      "description": "Campus thrift drop order placed by a student buyer.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Order reference ID."
+        },
+        "userId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Buyer Firebase Auth UID."
+        },
+        "campusId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Campus delivery hub ID."
+        },
+        "hostelDorm": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 120,
+          "description": "Delivery hostel or dorm."
+        },
+        "buyerName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80,
+          "description": "Buyer student name."
+        },
+        "phone": {
+          "type": "string",
+          "minLength": 6,
+          "maxLength": 24,
+          "description": "Buyer contact phone."
+        },
+        "paymentType": {
+          "type": "string",
+          "enum": ["upi", "drop_tokens", "cod"],
+          "description": "Selected payment method."
+        },
+        "totalAmount": {
+          "type": "number",
+          "description": "Total payable amount in INR."
+        },
+        "totalSavings": {
+          "type": "number",
+          "description": "Total savings vs retail in INR."
+        },
+        "itemCount": {
+          "type": "number",
+          "description": "Number of garments in order."
+        },
+        "itemTitles": {
+          "type": "array",
+          "description": "Bounded list of garment titles in the order (max 20)."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["confirmed", "packed", "delivered", "cancelled"],
+          "description": "Order fulfillment status."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "campusId",
+        "hostelDorm",
+        "buyerName",
+        "phone",
+        "paymentType",
+        "totalAmount",
+        "totalSavings",
+        "itemCount",
+        "itemTitles",
+        "status",
+        "createdAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Student account profiles strictly isolated per user (owner or verified admin only)."
+    },
+    "/pickupBookings/{bookingId}": {
+      "schema": { "$ref": "#/entities/PickupBooking" },
+      "description": "Doorstep pickup bookings created by authenticated students."
+    },
+    "/orders/{orderId}": {
+      "schema": { "$ref": "#/entities/ThriftOrder" },
+      "description": "Thrift drop orders placed by authenticated students."
+    }
+  }
+}
