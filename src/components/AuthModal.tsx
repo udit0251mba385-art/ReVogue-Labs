@@ -10,6 +10,7 @@ import {
   AlertCircle,
   CheckCircle2,
   Building2,
+  ExternalLink,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { CAMPUS_LOCATIONS } from '../data/mockData';
@@ -22,6 +23,12 @@ interface AuthModalProps {
 }
 
 type AuthMode = 'signin' | 'signup' | 'reset';
+
+interface AuthErrorInfo {
+  message: string;
+  consoleUrl?: string;
+  consoleLabel?: string;
+}
 
 export const AuthModal: React.FC<AuthModalProps> = ({
   isOpen,
@@ -37,12 +44,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [campusId, setCampusId] = useState(CAMPUS_LOCATIONS[0].id);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [errorInfo, setErrorInfo] = useState<AuthErrorInfo | null>(null);
   const [infoMsg, setInfoMsg] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
-  const mapAuthError = (err: unknown): string => {
+  const mapAuthError = (err: unknown): AuthErrorInfo => {
     const code =
       typeof err === 'object' && err !== null && 'code' in err
         ? String((err as { code?: string }).code)
@@ -50,33 +57,65 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
     switch (code) {
       case 'auth/operation-not-allowed':
-        return `Email/Password sign-in is not enabled yet in Firebase Console for project "${FIREBASE_PROJECT_ID}". Enable it under Authentication -> Sign-in method -> Email/Password, or use Continue with Google below.`;
+        return {
+          message: `Email/Password sign-in is disabled in Firebase Console for "${FIREBASE_PROJECT_ID}". Enable the Email/Password provider in Firebase Console, or use Continue with Google below.`,
+          consoleUrl: `https://console.firebase.google.com/project/${FIREBASE_PROJECT_ID}/authentication/providers`,
+          consoleLabel: 'Open Firebase Sign-in Providers',
+        };
+      case 'auth/unauthorized-domain':
+        return {
+          message: `Domain "${window.location.hostname}" must be added to Authorized Domains in Firebase Authentication settings.`,
+          consoleUrl: `https://console.firebase.google.com/project/${FIREBASE_PROJECT_ID}/authentication/settings`,
+          consoleLabel: 'Open Firebase Auth Settings',
+        };
       case 'auth/invalid-credential':
       case 'auth/wrong-password':
       case 'auth/user-not-found':
-        return 'Invalid email or password. Double-check your credentials or reset your password.';
+        return {
+          message: 'Invalid email or password. Double-check your credentials or reset your password.',
+        };
       case 'auth/email-already-in-use':
-        return 'An account with this email already exists. Switch to Sign In to access your account.';
+        return {
+          message: 'An account with this email already exists. Switch to Email Sign In to access your account.',
+        };
       case 'auth/weak-password':
-        return 'Password must be at least 6 characters long.';
+        return {
+          message: 'Password must be at least 6 characters long.',
+        };
       case 'auth/invalid-email':
-        return 'Please enter a valid university or personal email address.';
+        return {
+          message: 'Please enter a valid university or personal email address.',
+        };
       case 'auth/too-many-requests':
-        return 'Too many attempts. Please wait a few moments before trying again.';
+        return {
+          message: 'Too many attempts. Please wait a few moments before trying again.',
+        };
       case 'auth/popup-closed-by-user':
-        return 'Google sign-in window was closed before completing.';
-      case 'auth/unauthorized-domain':
-        return 'This domain is not yet authorized in Firebase Auth settings.';
+      case 'auth/cancelled-popup-request':
+        return {
+          message: 'Google sign-in popup was closed before completing. Try again or use Email Sign In.',
+        };
+      case 'auth/popup-blocked':
+        return {
+          message: 'Your browser blocked the sign-in popup. Allow popups for this site or sign in with Email below.',
+        };
+      case 'auth/network-request-failed':
+        return {
+          message: 'Network error while connecting to Firebase Authentication. Check your connection and retry.',
+        };
       default:
-        return err instanceof Error
-          ? err.message
-          : 'Unable to complete authentication. Please try again.';
+        return {
+          message:
+            err instanceof Error
+              ? err.message
+              : 'Unable to complete authentication. Please try again.',
+        };
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMsg(null);
+    setErrorInfo(null);
     setInfoMsg(null);
     setIsLoading(true);
 
@@ -87,7 +126,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         onClose();
       } else if (mode === 'signup') {
         if (!displayName.trim()) {
-          setErrorMsg('Please enter your name to create an account.');
+          setErrorInfo({ message: 'Please enter your name to create an account.' });
           setIsLoading(false);
           return;
         }
@@ -99,14 +138,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         setInfoMsg(`Password reset email sent to ${email.trim()}. Check your inbox.`);
       }
     } catch (err) {
-      setErrorMsg(mapAuthError(err));
+      setErrorInfo(mapAuthError(err));
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleGoogleSignIn = async () => {
-    setErrorMsg(null);
+    setErrorInfo(null);
     setInfoMsg(null);
     setIsLoading(true);
     try {
@@ -114,7 +153,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       onAuthSuccess('Signed in with Google');
       onClose();
     } catch (err) {
-      setErrorMsg(mapAuthError(err));
+      setErrorInfo(mapAuthError(err));
     } finally {
       setIsLoading(false);
     }
@@ -122,7 +161,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   const switchMode = (nextMode: AuthMode) => {
     setMode(nextMode);
-    setErrorMsg(null);
+    setErrorInfo(null);
     setInfoMsg(null);
   };
 
@@ -132,7 +171,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md bg-[#FAF9F4] border border-[#1E3F20]/20 rounded-lg shadow-2xl overflow-hidden"
+        className="w-full max-w-md bg-[#FAF9F4] border border-[#1E3F20]/20 rounded-lg shadow-2xl overflow-hidden max-h-[92vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -189,10 +228,23 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           )}
 
           {/* Error & Info Alerts */}
-          {errorMsg && (
-            <div className="p-3 rounded bg-[#FF5E36]/10 border border-[#FF5E36]/30 text-xs text-[#9E2A0E] flex items-start gap-2.5 leading-relaxed">
-              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-[#FF5E36]" />
-              <span>{errorMsg}</span>
+          {errorInfo && (
+            <div className="p-3 rounded bg-[#FF5E36]/10 border border-[#FF5E36]/30 text-xs text-[#9E2A0E] space-y-2 leading-relaxed">
+              <div className="flex items-start gap-2.5">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-[#FF5E36]" />
+                <span>{errorInfo.message}</span>
+              </div>
+              {errorInfo.consoleUrl && (
+                <a
+                  href={errorInfo.consoleUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 font-mono font-semibold text-[#1E3F20] bg-white border border-[#1E3F20]/25 px-2.5 py-1 rounded hover:border-[#1E3F20]"
+                >
+                  <span>{errorInfo.consoleLabel}</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              )}
             </div>
           )}
 

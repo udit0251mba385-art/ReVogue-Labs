@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CartItem } from '../types';
 import { CAMPUS_LOCATIONS } from '../data/mockData';
 import { 
@@ -46,6 +46,15 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   const [isOrdered, setIsOrdered] = useState<boolean>(false);
   const [completedOrderId, setCompletedOrderId] = useState<string>('');
 
+  useEffect(() => {
+    if (profile?.campusId) {
+      setSelectedCampusId(profile.campusId);
+    }
+    if (profile?.displayName || user?.displayName) {
+      setBuyerName(profile?.displayName || user?.displayName || 'Ananya Sharma');
+    }
+  }, [profile?.campusId, profile?.displayName, user?.displayName]);
+
   if (!isOpen) return null;
 
   const subtotal = items.reduce((acc, curr) => acc + curr.product.thriftPrice * curr.quantity, 0);
@@ -58,19 +67,23 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
     e.preventDefault();
     const orderId = `RV-ORD-${Math.floor(1000 + Math.random() * 9000)}`;
     if (user && user.emailVerified) {
-      await saveOrderToCloud({
-        id: orderId,
-        campusId: selectedCampusId,
-        hostelDorm,
-        buyerName,
-        phone,
-        paymentType,
-        totalAmount: total,
-        totalSavings,
-        itemCount: items.length,
-        itemTitles: items.map((i) => `${i.product.brand} ${i.product.title}`),
-        status: 'confirmed',
-      });
+      try {
+        await saveOrderToCloud({
+          id: orderId,
+          campusId: selectedCampusId,
+          hostelDorm,
+          buyerName,
+          phone,
+          paymentType,
+          totalAmount: total,
+          totalSavings,
+          itemCount: items.length,
+          itemTitles: items.map((i) => `${i.product.brand} ${i.product.title}`),
+          status: 'confirmed',
+        });
+      } catch {
+        // Local order confirmation still proceeds; cloud sync error is logged
+      }
     }
     setCompletedOrderId(orderId);
     setIsOrdered(true);

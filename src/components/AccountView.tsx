@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { CAMPUS_LOCATIONS } from '../data/mockData';
+import { FIREBASE_PROJECT_ID } from '../firebase';
+import firebaseConfig from '../../firebase-applet-config.json';
 import {
   LogOut,
   Mail,
@@ -12,6 +14,7 @@ import {
   Building2,
   Coins,
   CheckCircle2,
+  ExternalLink,
 } from 'lucide-react';
 
 interface AccountViewProps {
@@ -44,6 +47,12 @@ export const AccountView: React.FC<AccountViewProps> = ({
   );
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isSavingCampus, setIsSavingCampus] = useState(false);
+
+  useEffect(() => {
+    if (profile?.campusId) {
+      setSelectedCampus(profile.campusId);
+    }
+  }, [profile?.campusId]);
 
   if (!user) {
     return (
@@ -82,6 +91,8 @@ export const AccountView: React.FC<AccountViewProps> = ({
           'Please click the verification link in your email inbox first.'
         );
       }
+    } catch {
+      onToast('Refresh Failed', 'Could not refresh verification status right now.');
     } finally {
       setIsRefreshing(false);
     }
@@ -101,8 +112,19 @@ export const AccountView: React.FC<AccountViewProps> = ({
     try {
       await updateCampusPreference(selectedCampus);
       onToast('Campus Updated', 'Your default hostel pickup hub has been saved.');
+    } catch {
+      onToast('Update Failed', 'Could not save campus preference. Make sure your email is verified.');
     } finally {
       setIsSavingCampus(false);
+    }
+  };
+
+  const handleCancelBooking = async (bookingId: string) => {
+    try {
+      await cancelBookingInCloud(bookingId);
+      onToast('Pickup Cancelled', `Booking #${bookingId} has been cancelled.`);
+    } catch {
+      onToast('Cancel Failed', 'Could not cancel booking right now.');
     }
   };
 
@@ -110,6 +132,8 @@ export const AccountView: React.FC<AccountViewProps> = ({
     await logout();
     onToast('Signed Out', 'You have securely logged out of ReVogue Labs.');
   };
+
+  const isAdminUser = user.email === 'chotusharma4477@gmail.com' && user.emailVerified;
 
   return (
     <div className="py-10 max-w-5xl mx-auto px-4 sm:px-6 space-y-8">
@@ -179,6 +203,55 @@ export const AccountView: React.FC<AccountViewProps> = ({
               <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
               <span>I&apos;ve Verified</span>
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Firebase Console Quick Management (Admin only) */}
+      {isAdminUser && (
+        <div className="bg-[#1E3F20] text-[#F7F5EE] rounded-lg p-5 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="text-xs font-mono uppercase tracking-wider text-[#C2F04E] font-semibold">
+              Firebase Console Shortcuts · Project {FIREBASE_PROJECT_ID}
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 text-xs font-mono">
+            <a
+              href={`https://console.firebase.google.com/project/${FIREBASE_PROJECT_ID}/authentication/providers`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-white/10 hover:bg-white/15 border border-white/15 rounded px-3 py-2 flex items-center justify-between transition-colors"
+            >
+              <span>Auth Providers</span>
+              <ExternalLink className="w-3.5 h-3.5 text-[#C2F04E]" />
+            </a>
+            <a
+              href={`https://console.firebase.google.com/project/${FIREBASE_PROJECT_ID}/authentication/users`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-white/10 hover:bg-white/15 border border-white/15 rounded px-3 py-2 flex items-center justify-between transition-colors"
+            >
+              <span>Registered Users</span>
+              <ExternalLink className="w-3.5 h-3.5 text-[#C2F04E]" />
+            </a>
+            <a
+              href={`https://console.firebase.google.com/project/${FIREBASE_PROJECT_ID}/firestore/databases/${firebaseConfig.firestoreDatabaseId}/data`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-white/10 hover:bg-white/15 border border-white/15 rounded px-3 py-2 flex items-center justify-between transition-colors"
+            >
+              <span>Firestore Data</span>
+              <ExternalLink className="w-3.5 h-3.5 text-[#C2F04E]" />
+            </a>
+            <a
+              href={`https://console.firebase.google.com/project/${FIREBASE_PROJECT_ID}/firestore/rules`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-white/10 hover:bg-white/15 border border-white/15 rounded px-3 py-2 flex items-center justify-between transition-colors"
+            >
+              <span>Security Rules</span>
+              <ExternalLink className="w-3.5 h-3.5 text-[#C2F04E]" />
+            </a>
           </div>
         </div>
       )}
@@ -284,7 +357,7 @@ export const AccountView: React.FC<AccountViewProps> = ({
 
                   {booking.status === 'scheduled' && (
                     <button
-                      onClick={() => cancelBookingInCloud(booking.id)}
+                      onClick={() => handleCancelBooking(booking.id)}
                       className="px-3 py-1.5 text-[11px] font-mono text-[#FF5E36] border border-[#FF5E36]/30 hover:bg-[#FF5E36]/10 rounded cursor-pointer"
                     >
                       Cancel

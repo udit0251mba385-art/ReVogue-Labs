@@ -100,13 +100,13 @@ export const Navbar: React.FC<NavbarProps> = ({
         </nav>
 
         {/* Zone 3: Auth & Bag Controls */}
-        <div className="flex items-center gap-2.5 shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
           {authReady && (
             user ? (
-              <div className="hidden sm:flex items-center gap-2">
+              <div className="flex items-center gap-1.5 sm:gap-2">
                 <button
                   onClick={() => handleNavClick('account')}
-                  className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-md border transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                  className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-2 text-xs font-medium rounded-md border transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
                     activeTab === 'account'
                       ? 'bg-[#1E3F20]/10 border-[#1E3F20] text-[#1E3F20]'
                       : 'bg-white border-[#1E3F20]/20 text-[#142B15] hover:border-[#1E3F20]'
@@ -114,11 +114,11 @@ export const Navbar: React.FC<NavbarProps> = ({
                   title={user.email || 'My Account'}
                 >
                   <UserIcon className="w-3.5 h-3.5 text-[#1E3F20]" />
-                  <span className="max-w-[100px] truncate">{shortUserLabel}</span>
+                  <span className="max-w-[75px] sm:max-w-[110px] truncate">{shortUserLabel}</span>
                 </button>
                 <button
                   onClick={handleLogout}
-                  className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-[#5A564A] hover:text-[#FF5E36] bg-white border border-[#1E3F20]/15 hover:border-[#FF5E36]/40 rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+                  className="hidden sm:flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-[#5A564A] hover:text-[#FF5E36] bg-white border border-[#1E3F20]/15 hover:border-[#FF5E36]/40 rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer"
                   aria-label="Log Out"
                 >
                   <LogOut className="w-3.5 h-3.5" />
@@ -128,7 +128,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             ) : (
               <button
                 onClick={openAuthModal}
-                className="hidden sm:flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-[#1E3F20] bg-white border border-[#1E3F20]/25 hover:border-[#1E3F20] rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+                className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-[#1E3F20] bg-white border border-[#1E3F20]/25 hover:border-[#1E3F20] rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer"
               >
                 <LogIn className="w-3.5 h-3.5" />
                 <span>Sign In</span>

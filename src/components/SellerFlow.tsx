@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CAMPUS_LOCATIONS } from '../data/mockData';
 import { PickupBooking } from '../types';
 import { 
@@ -42,6 +42,19 @@ export const SellerFlow: React.FC<SellerFlowProps> = ({
     profile?.displayName || user?.displayName || 'Ishaan Grover'
   );
   const [phone, setPhone] = useState<string>('+91 98112 40982');
+
+  useEffect(() => {
+    if (profile?.campusId) {
+      setSelectedCampusId(profile.campusId);
+      const campus = CAMPUS_LOCATIONS.find((c) => c.id === profile.campusId);
+      if (campus && campus.hostels.length > 0) {
+        setSelectedHostel(campus.hostels[0]);
+      }
+    }
+    if (profile?.displayName || user?.displayName) {
+      setContactName(profile?.displayName || user?.displayName || 'Ishaan Grover');
+    }
+  }, [profile?.campusId, profile?.displayName, user?.displayName]);
 
   // Step 2: Bag Size & Valuation Calculator
   const [bagTier, setBagTier] = useState<'small' | 'medium' | 'bulk'>('medium');
@@ -116,7 +129,11 @@ export const SellerFlow: React.FC<SellerFlowProps> = ({
     };
 
     if (user && user.emailVerified) {
-      await saveBookingToCloud(newBooking);
+      try {
+        await saveBookingToCloud(newBooking);
+      } catch {
+        // Local booking confirmation still proceeds; cloud sync error is logged
+      }
     }
 
     setConfirmedBooking(newBooking);

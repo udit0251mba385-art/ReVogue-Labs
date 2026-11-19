@@ -102,10 +102,16 @@ function clampString(value: string, maxLen: number, fallback = ''): string {
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [userRevision, setUserRevision] = useState<number>(0);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [authReady, setAuthReady] = useState<boolean>(false);
   const [cloudBookings, setCloudBookings] = useState<PickupBooking[]>([]);
   const [cloudOrders, setCloudOrders] = useState<CloudThriftOrder[]>([]);
+  const [fatalError, setFatalError] = useState<Error | null>(null);
+
+  if (fatalError) {
+    throw fatalError;
+  }
 
   // Listen for Firebase Auth state changes
   useEffect(() => {
@@ -126,8 +132,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!authReady || !user) return;
 
     if (!user.emailVerified) {
-      // Unverified users remain authenticated in Firebase Auth UI,
-      // but cloud Firestore reads/writes wait until email is verified.
       setProfile({
         uid: user.uid,
         email: user.email || '',
@@ -139,21 +143,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
 
-    const userDocRef = doc(db, 'users', user.uid);
+    const currentUid = user.uid;
+    const userDocRef = doc(db, 'users', currentUid);
     let isMounted = true;
 
     async function ensureUserProfile() {
+      if (!auth.currentUser) return;
       try {
         const snap = await getDoc(userDocRef);
-        if (!snap.exists() && isMounted && user) {
+        if (!snap.exists() && isMounted && auth.currentUser) {
           const safeDisplayName = clampString(
-            user.displayName || (user.email ? user.email.split('@')[0] : 'Campus Student'),
+            auth.currentUser.displayName ||
+              (auth.currentUser.email ? auth.currentUser.email.split('@')[0] : 'Campus Student'),
             80,
             'Campus Student'
           );
-          const safeEmail = clampString(user.email || 'student@revoguelabs.in', 160);
+          const safeEmail = clampString(
+            auth.currentUser.email || 'student@revoguelabs.in',
+            160
+          );
           await setDoc(userDocRef, {
-            uid: sanitizeId(user.uid, user.uid, 128),
+            uid: sanitizeId(auth.currentUser.uid, auth.currentUser.uid, 128),
             email: safeEmail,
             displayName: safeDisplayName,
             campusId: 'du-north',
@@ -164,7 +174,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           });
         }
       } catch (err) {
-        handleFirestoreError(err, OperationType.WRITE, `users/${user?.uid}`);
+        if (!auth.currentUser || !isMounted) return;
+        try {
+          handleFirestoreError(err, OperationType.WRITE, `users/${currentUid}`);
+        } catch (wrappedErr) {
+          if (isMounted) {
+            setFatalError(wrappedErr instanceof Error ? wrappedErr : new Error(String(wrappedErr)));
+          }
+        }
       }
     }
 
@@ -178,7 +195,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       },
       (err) => {
-        handleFirestoreError(err, OperationType.GET, `users/${user.uid}`);
+        if (!auth.currentUser || !isMounted) return;
+        try {
+          handleFirestoreError(err, OperationType.GET, `users/${currentUid}`);
+        } catch (wrappedErr) {
+          if (isMounted) {
+            setFatalError(wrappedErr instanceof Error ? wrappedErr : new Error(String(wrappedErr)));
+          }
+        }
       }
     );
 
@@ -220,7 +244,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setCloudBookings(list);
       },
       (err) => {
-        handleFirestoreError(err, OperationType.LIST, 'pickupBookings');
+        if (!auth.currentUser || !isMounted) return;
+        try {
+          handleFirestoreError(err, OperationType.LIST, 'pickupBookings');
+        } catch (wrappedErr) {
+          if (isMounted) {
+            setFatalError(wrappedErr instanceof Error ? wrappedErr : new Error(String(wrappedErr)));
+          }
+        }
       }
     );
 
@@ -260,7 +291,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setCloudOrders(list);
       },
       (err) => {
-        handleFirestoreError(err, OperationType.LIST, 'orders');
+        if (!auth.currentUser || !isMounted) return;
+        try {
+          handleFirestoreError(err, OperationType.LIST, 'orders');
+        } catch (wrappedErr) {
+          if (isMounted) {
+            setFatalError(wrappedErr instanceof Error ? wrappedErr : new Error(String(wrappedErr)));
+          }
+        }
       }
     );
 
@@ -270,7 +308,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       unsubBookings();
       unsubOrders();
     };
-  }, [authReady, user, user?.emailVerified]);
+  }, [authReady, user, user?.emailVerified, userRevision]);
 
   const signInWithEmail = async (email: string, password: string) => {
     await signInWithEmailAndPassword(auth, email.trim(), password);
@@ -288,9 +326,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       await sendEmailVerification(credential.user);
     } catch {
-      // Verification email dispatch failure shouldn't block account creation
+      // Verification email rate-limit or delivery issue shouldn't block account creation
     }
-    setUser({ ...credential.user, displayName: cleanName } as User);
+    setUser(credential.user);
+    setUserRevision((r) => r + 1);
     setProfile({
       uid: credential.user.uid,
       email: email.trim(),
@@ -318,14 +357,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const refreshUser = async (): Promise<boolean> => {
     if (!auth.currentUser) return false;
     await auth.currentUser.reload();
-    const refreshed = auth.currentUser;
-    // Force state update with fresh token flags
-    await refreshed.getIdToken(true);
-    setUser(Object.assign(Object.create(Object.getPrototypeOf(refreshed)), refreshed));
-    return refreshed.emailVerified;
+    await auth.currentUser.getIdToken(true);
+    setUser(auth.currentUser);
+    setUserRevision((r) => r + 1);
+    return auth.currentUser.emailVerified;
   };
 
   const logout = async () => {
+    setFatalError(null);
     await signOut(auth);
   };
 
